@@ -1007,19 +1007,20 @@ foreach($row in $source)
 {
     $passwd = $row.SubString($row.IndexOf(':')+1).Trim()
     $letter = $row.SubString($row.IndexOf(':')-1,1)
-    $pos1 = $row.SubString(0,$row.IndexOf('-')) -as [int]
-    $pos2 = $row.SubString($row.IndexOf('-')+1,$row.IndexOf(' ')-$row.IndexOf('-')) -as [int]
+    $min = $row.SubString(0,$row.IndexOf('-')) -as [int]
+    $max = $row.SubString($row.IndexOf('-')+1,$row.IndexOf(' ')-$row.IndexOf('-')) -as [int]
 
-    $one = $passwd.ToCharArray()[$pos1-1]
-    $two = $passwd.ToCharArray()[$pos2-1]
-    if( $one -eq $letter -or  $two -eq $letter)
-    {
-        if( -not ( $one -eq $letter -and  $two -eq $letter) ) 
-        {
-            ++$count    
-        }
+    $letterCount = 0
+    $index= $passwd.IndexOf($letter)
+    while($index -ne -1 ){
+        ++$letterCount
+        $index=$passwd.IndexOf($letter, $index+1)
     }
 
+    if($letterCount -le $max -and $letterCount -ge $min)
+    {
+        ++$count 
+    }
 }
 
 Write-Output Result = $count
