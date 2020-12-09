@@ -1,3 +1,30 @@
+function validate([string] $p)
+{
+   $s = $p.Split(':')
+    switch( $s[0] )
+    {
+        "byr"{($s[1] -as [int]) -ge 1920 -and  ($s[1] -as [int]) -le 2002 }
+        "iyr"{($s[1] -as [int]) -ge 2010 -and  ($s[1] -as [int]) -le 2020 }
+        "eyr"{($s[1] -as [int]) -ge 2020 -and  ($s[1] -as [int]) -le 2030 }
+        "hgt"{
+           
+           if( $s[1].LastIndexOfAny( @('c','i') ) -eq -1 )
+           { 
+               return $false
+           }
+
+           $unit = $s[1].Substring( $s[1].LastIndexOfAny( @('c','i') ))
+           $measument = $s[1].Substring( 0, $s[1].IndexOfAny( @('c','i') ))
+           if($unit -eq "cm"){ ($measument -as [int]) -ge 150 -and  ($measument -as [int]) -le 193}
+           if($unit -eq "in"){ ($measument -as [int]) -ge 59 -and  ($measument -as [int]) -le 76}
+        }
+        "hcl"{ $s[1].Length -eq 7 -and $s[1].ToCharArray()[0] -eq '#' }
+        "ecl"{ @('amb', 'blu', 'brn', 'gry', 'grn', 'hzl', 'oth').Contains($s[1])}
+        "pid"{ $s[1].Length -eq 9 -and $s[1] -as [int]}
+        "cid"{ TRUE }
+    }
+}
+
 $source="hgt:176cm
 iyr:2013
 hcl:#fffffd ecl:amb
@@ -989,11 +1016,37 @@ iyr:2010 pid:623705680
 ecl:hzl hgt:181cm byr:1980 hcl:#341e13 eyr:2028"
 
 $source = $source.Split([Environment]::NewLine)
-
+$count=0
  $iter = $source.GetEnumerator()
- $iter.MoveNext()
-while( -not [string]::IsNullOrEmpty( $iter.Current ) )
-{
-    [string.spl]
+ 
+ while($iter.MoveNext()){
+     $passport = [string]::Empty
+    while( -not [string]::IsNullOrEmpty( $iter.Current ) )
+    {
+        $passport = $passport + ' ' + $iter.Current
+        $iter.MoveNext();
+    }
+    $split = $passport.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
+    if($split.Length -eq 8 -or $split.Length -eq 7)
+    {
+        if($split.Length -eq 7)
+        {
+            $np = $split | Where-Object { -not $_.Contains('cid:') } 
+            if ( $np.Length -eq 7 )
+            {
+                if( ($np | where-object {validate($_) -eq TRUE}).Length -eq 7 )
+                {
+                    $count++
+                }
+            }
+        }
+        else{
+            if( ($np | where-object {validate($_) -eq TRUE}).Length -eq 8 )
+            {
+                $count++
+            }
+        }
+    }
+    $count
+ }
 
-}
